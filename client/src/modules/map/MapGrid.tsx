@@ -1,5 +1,5 @@
 import React from "react";
-import type { PositionRow } from "../api/OgameService";
+import type { PositionRow } from "../types/types";
 
 type MapGridProps = {
   rows: PositionRow[];
