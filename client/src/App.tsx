@@ -1,15 +1,17 @@
 import { useOgameData } from "./hooks/useOgameData";
+import {MapGrid} from "./modules/map/MapGrid";
 
 export default function App() {
   const { grid, rows, loading, error, isUrl } = useOgameData(false); // true = mock
 
+      if (loading) return <p>Loading...</p>;
+      if (error) return <p>Error: {error}</p>;
+
   return (
-    <div style={{ padding: 20 }}>
+    <div style={{ padding: 5 }}>
       <h1>OGame Map MVP</h1>
-      {loading && <p>Loading...</p>}
-      {error && <p>Error: {error}</p>}
       <h2>{isUrl ? "URL" : "Json Test"}</h2>
-      <pre>{JSON.stringify(grid, null, 2)}</pre>
+      <MapGrid rows = {rows}/>
     </div>
   );
 }
