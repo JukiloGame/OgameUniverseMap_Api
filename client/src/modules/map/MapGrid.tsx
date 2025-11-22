@@ -3,8 +3,8 @@ import type { PositionRow } from "../api/OgameService";
 
 type MapGridProps = {
   rows: PositionRow[];
-  maxPositions?: number; // por defecto 15
-  maxSystems?: number;   // por defecto 499
+  maxPositions?: number; // default 15
+  maxSystems?: number;   // default 499
 };
 
 export const MapGrid: React.FC<MapGridProps> = ({
@@ -12,7 +12,7 @@ export const MapGrid: React.FC<MapGridProps> = ({
   maxPositions = 15,
   maxSystems = 499,
 }) => {
-  // transformar rows en grid
+  // Convertir rows en grid
   const grid: Record<string, Record<string, Record<string, PositionRow>>> = {};
   rows.forEach((r) => {
     const g = String(r.galaxy);
@@ -27,21 +27,14 @@ export const MapGrid: React.FC<MapGridProps> = ({
   const sortedGalaxies = Object.keys(grid).sort((a, b) => Number(a) - Number(b));
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+    <div className="flex flex-col gap-6 p-4 bg-lineal-to-b from-black to-gray-900 text-white">
       {sortedGalaxies.map((gal) => {
         const systems = grid[gal];
 
         return (
-          <div key={gal}>
-            <h3>Galaxy {gal}</h3>
-            <div
-              style={{
-                display: "flex",
-                gap: 2,
-                overflowX: "auto",
-                paddingBottom: 10,
-              }}
-            >
+          <div key={gal} className="flex flex-col gap-2">
+            <h3 className="text-2xl font-bold mb-2">Galaxy {gal}</h3>
+            <div className="flex overflow-x-auto pb-4">
               {Array.from({ length: maxSystems }, (_, sysIndex) => {
                 const sysNum = sysIndex + 1;
                 const positions = systems[sysNum] ?? {};
@@ -49,21 +42,10 @@ export const MapGrid: React.FC<MapGridProps> = ({
                 return (
                   <div
                     key={sysNum}
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "center",
-                      gap: 1,
-                    }}
+                    className="flex flex-col items-center"
                   >
-                    <span style={{ fontSize: 10 }}>{sysNum}</span>
-                    <div
-                      style={{
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: 1,
-                      }}
-                    >
+                    <span className="text-sm mb-1">{sysNum}</span>
+                    <div className="flex flex-col">
                       {Array.from({ length: maxPositions }, (_, posIndex) => {
                         const posNum = posIndex + 1;
                         const cell = positions[posNum];
@@ -72,13 +54,10 @@ export const MapGrid: React.FC<MapGridProps> = ({
                         return (
                           <div
                             key={posNum}
-                            title={cell?.player ? `${cell.player.name}` : "Empty"}
-                            style={{
-                              width: 20,
-                              height: 20,
-                              backgroundColor: occupied ? "red" : "lightgray",
-                              border: "1px solid #999",
-                            }}
+                            title={cell?.player ? cell.player.name : "Empty"}
+                            className={`w-6 h-6 border ${
+                              occupied ? "bg-red-600 border-red-700 hover:bg-red-500" : "bg-gray-800 border-gray-700"
+                            }`}
                           />
                         );
                       })}
