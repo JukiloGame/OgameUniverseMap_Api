@@ -2,17 +2,14 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 
-// https://vite.dev/config/
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
     proxy: {
-      // todas las peticiones a /ogame se redirigen al servidor real
-      '/ogame': {
-        target: 'https://s267-es.ogame.gameforge.com',
+      '/api': {
+        target: 'https://s267-es.ogame.gameforge.com', //default dev
         changeOrigin: true,
-        secure: true,
-        rewrite: (path) => path.replace(/^\/ogame/, ''),
+        rewrite: (path) => path.replace(/^\/api/, ''),
       },
     },
   },
