@@ -12,70 +12,53 @@ export type PositionRow = {
   player?: PlayerData | null;
 };
 
-export const useOgameData = (mock = false) => {
-  const [grid, setGrid] = useState<Record<string, any>>({});
+export const useOgameData = (serverId: string | null) => {
   const [rows, setRows] = useState<PositionRow[]>([]);
+  const [grid, setGrid] = useState<Record<string, any>>({});
   const [loading, setLoading] = useState(false);
-  const [isUrl, setIsUrl] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!serverId) return;
 
     const fetchData = async () => {
       setLoading(true);
       setError(null);
 
       try {
-        let planets: any[] = [];
+        const res = await fetch(`/ogapi/${serverId}/universe.xml`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
-        if (mock) {
-          // solo para pruebas
-		  setIsUrl(false);
-          const res = await fetch("/mocks/sampleUniverse.json");
-          const data = await res.json();
-          planets = data.planet ?? [];
-        } else {
-          // fetch XML de la API real
-		  setIsUrl(true);
-          const res = await fetch(`/ogame/api/universe.xml`);
-          if (!res.ok) throw new Error(`HTTP ${res.status}`);
-          const xmlText = await res.text();
-          const parser = new DOMParser();
-          const xmlDoc = parser.parseFromString(xmlText, "application/xml");
+        const xmlText = await res.text();
+        const parser = new DOMParser();
+        const xmlDoc = parser.parseFromString(xmlText, "application/xml");
 
-          const parserror = xmlDoc.querySelector("parsererror");
-          if (parserror) throw new Error("Error parseando XML: " + parserror.textContent);
+        const parserError = xmlDoc.querySelector("parsererror");
+        if (parserError) throw new Error("Error parseando XML: " + parserError.textContent);
 
-          // extraer planet nodes
-          const planetNodes = Array.from(xmlDoc.querySelectorAll("planet"));
+        const planetNodes = Array.from(xmlDoc.querySelectorAll("planet"));
 
-          planets = planetNodes.map((node) => {
-            const id = node.getAttribute("id") ?? undefined;
-            const name = node.getAttribute("name") ?? undefined;
-            const playerId = node.getAttribute("player") ?? undefined;
-            const coords = node.getAttribute("coords") ?? "0:0:0";
+        const parsedRows: PositionRow[] = planetNodes.map((node: any) => {
+          const coords = node.getAttribute("coords") ?? "0:0:0";
+          const [galaxy, system, position] = coords.split(":").map(Number);
 
-            return {
-              "@id": id,
-              "@name": name,
-              "@player": playerId,
-              "@coords": coords,
-            };
-          });
-        }
+          const playerId = node.getAttribute("player");
+          const playerName = node.getAttribute("name");
 
-        // parsear rows y grid
-        const parsedRows: PositionRow[] = planets.map((p) => {
-          const [galaxy, system, position] = p["@coords"].split(":").map(Number);
-          const player = p["@player"] ? { id: p["@player"], name: p["@name"] } : null;
-          return { galaxy, system, position, player };
+          return {
+            galaxy,
+            system,
+            position,
+            player: playerId ? { id: playerId, name: playerName } : null,
+          };
         });
 
         const parsedGrid: Record<string, any> = {};
         parsedRows.forEach((r) => {
-          const g = String(r.galaxy);
-          const s = String(r.system);
-          const p = String(r.position);
+          const g = r.galaxy;
+          const s = r.system;
+          const p = r.position;
+
           if (!parsedGrid[g]) parsedGrid[g] = {};
           if (!parsedGrid[g][s]) parsedGrid[g][s] = {};
           parsedGrid[g][s][p] = r;
@@ -83,15 +66,16 @@ export const useOgameData = (mock = false) => {
 
         setRows(parsedRows);
         setGrid(parsedGrid);
-      } catch (e: any) {
-        setError(e.message || "Unknown error");
+
+      } catch (err: any) {
+        setError(err.message);
       } finally {
         setLoading(false);
       }
     };
 
     fetchData();
-  }, [mock]);
+  }, [serverId]);
 
-  return { rows, grid, loading, error, isUrl };
+  return { rows, grid, loading, error };
 };

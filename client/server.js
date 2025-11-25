@@ -1,23 +1,36 @@
-// server.js
 import express from "express";
 import fetch from "node-fetch";
+import cors from "cors";
 
 const app = express();
-const PORT = 3001;
+app.use(cors());
 
-app.get("/api/:serverId/universe.xml", async (req, res) => {
-  const { serverId } = req.params;
-  const url = `https://${serverId}.ogame.gameforge.com/api/universe.xml`;
+/**
+ * Proxy dinámico:
+ * /ogapi/264-es/universe.xml
+ *   -> https://s264-es.ogame.gameforge.com/api/universe.xml
+ */
+app.get("/ogapi/:server/universe.xml", async (req, res) => {
+  const serverId = req.params.server; // ej: "264-es"
+  const targetUrl = `https://s${serverId}.ogame.gameforge.com/api/universe.xml`;
 
   try {
-    const response = await fetch(url);
-    const text = await response.text();
-    res.setHeader("Content-Type", "application/xml");
-    res.send(text);
+    const response = await fetch(targetUrl);
+
+    if (!response.ok) {
+      return res
+        .status(response.status)
+        .send(`Error proxying universe.xml: ${response.status}`);
+    }
+
+    const xml = await response.text();
+    res.set("Content-Type", "application/xml");
+    res.send(xml);
   } catch (err) {
-    console.error(err);
-    res.status(500).send("Failed to fetch universe");
+    console.error("Proxy error:", err);
+    res.status(500).send("Proxy error");
   }
 });
 
-app.listen(PORT, () => console.log(`Proxy server running on http://localhost:${PORT}`));
+const PORT = 3001;
+app.listen(PORT, () => console.log("Proxy server running on port", PORT));
